@@ -1,0 +1,59 @@
+# Kafka Chat
+simple IRC chat with Apache Kafka
+
+### Members
+
+- 13512078 Ramandika Pranamulia
+- 13512086 Stanley Santoso
+
+### Concepts
+Each nickname will be a client in a consumer group. That consumer group will subscribe to some specific topics contains a partition only.
+The list of channel a user join will not be saved in Kafka, the only one being saved is the offset of message a consumer group has by zookeper. Therefore if a user logout and join with the same nickname he/she will get message that he/she has left behind when he/she logged-out.
+```
+Assume stanley joins pat and if4031
+
+When a user types `/JOIN` or `/LEAVE`, it will create a connector for that specific channel and save it into Map<String,Connector> connectors
+and after joining a channel it gives the connector handler to a thread and start listening. If a topic doesn't exist the client will create a topic with the same name that intended at /JOIN
+```
+>/JOIN tbd
+Client
+######################################
+# connectors.add("tbd",connector)    # -> add connector handler to specific topic/channel
+# ThreadConsumer t=new ThreadConsumer(chname,connector);#
+# Thread thread = new Thread(t);			#
+# thread.start();					#
+######################################
+
+> /LEAVE tbd
+Client
+##################################
+#connector.shutdown()           # -> will stop listening to that channel  and exit thread
+#connectors.remove("tbd")    # -> remove from map
+##################################
+```
+When a user sends a message, it will create a kafka producer which will send the message to the associated
+channel. One channel represented as one kafka topic. The topic must be exist since they tried to create the topic at join time if 
+te topic doesn't exit
+```
+@pat hello
+Client                                                  Server
+###############################################     ###########################
+# producer = create kafka producer            #     # Topic pat:              #
+# record = new ProducerRecord("pat","hello")  # ->  # message:                #
+# producer.send(record)                       #     # hello                   #
+###############################################     ###########################
+```
+When the user types `/EXIT`, all the connectors will be shutdown and connectors map will be cleared.
+```
+### Available commands
+
+1. `/NICK <nickname>`: give your own **nickname**
+2. `/NICK`: give **random nickname** provided by the application
+2. `/JOIN <channelname>`: join current nickname to **channelname**
+3. `/LEAVE <channel>`: leave current nickname from **channel**
+4. `/EXIT`: terminate the application
+5. `@<channelname> <any_text>` send **any_text** to **channelname**
+6. `<any_text>` send **any_text** to all channels joined by the user.
+
+
+### Running Program

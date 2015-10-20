@@ -69,14 +69,16 @@ public class Client{
                 Thread thread = new Thread(t);
                 thread.start();
                 timeout=false;
+                System.out.println("Created channel " + chname);
+                System.out.println("You join "+chname);
             }catch(Exception e){
                 if(e.getMessage().contains("already exist") && e.getMessage().contains("Topic"))timeout=true;
-                System.out.println(e.getMessage());
             }
             if(timeout){
                 ThreadConsumer t=new ThreadConsumer(chname,connector);
                 Thread thread = new Thread(t);
                 thread.start();
+                System.out.println("You join "+chname);
             }
         }
     }
@@ -121,7 +123,6 @@ public class Client{
     public List<KafkaStream<byte[],byte[]>> getSingleChannelStream(String channel){
         Map<String,Integer> topicCountMap=new HashMap<String, Integer>();
         topicCountMap.put(channel,1);
-        System.out.println(topicCountMap);
         Map<String,List<KafkaStream<byte[],byte[]>>> temp=connector.createMessageStreams(topicCountMap);
         if(temp!=null){
             return temp.get(channel);
@@ -130,13 +131,17 @@ public class Client{
     }
 
     public void sendMessage(String chname,String message){
-        KafkaProducer producer=getProducer();
-        String modifiedMessage = "[" + nickname + "][" + chname + "]: " + message;
-        ProducerRecord<byte[],byte[]> record =
-                new ProducerRecord<byte[],byte[]>(chname,
-                        modifiedMessage.getBytes());
-        producer.send(record);
-        producer.close();
+        if(connectors.containsKey(chname)) {
+            KafkaProducer producer = getProducer();
+            String modifiedMessage = "[" + nickname + "][" + chname + "]: " + message;
+            ProducerRecord<byte[], byte[]> record =
+                    new ProducerRecord<byte[], byte[]>(chname,
+                            modifiedMessage.getBytes());
+            producer.send(record);
+            producer.close();
+        }else{
+            System.out.println("You haven't join "+chname+" channel");
+        }
     }
 
     public void sendMessage(String message){
@@ -156,39 +161,65 @@ public class Client{
         int replicationFactor = 1;
         AdminUtils.createTopic(zkClient, chname, numPartitions, replicationFactor, new Properties());
     }
+
     public static void main(String[] args){
-        String zooKeeper = "localhost:2181"; //args[0];
-        String server= "localhost:9092";
+        //String zooKeeper = args[0];//"localhost:2181";
+        //String server= args[1];//"localhost:9092";
+
+        String zooKeeper="localhost:2181";
+        String server="localhost:9092";
 
         Client client=new Client(zooKeeper,server);
         String input,command;
         Scanner scan=new Scanner(System.in);
         input=scan.nextLine();
         while(!input.equals("/EXIT")){
-            command=input.substring(0,input.indexOf(' '));
+            if(input.contains(" ")) command=input.substring(0,input.indexOf(' '));
+            else command=input;
             switch (command){
                 case "/NICK":
-                    input=input.substring(input.indexOf(' ')+1,input.length());
-                    client.createNick(input);
+                    if(input.equals("/NICK")){
+                        StringGenerator generator=new StringGenerator(8);
+                        client.createNick(generator.nextString());
+                    }
+                    else{
+                        try {
+                            input = input.substring(input.indexOf(' ') + 1, input.length());
+                            client.createNick(input);
+                        }catch (Exception e){
+                            System.out.println("Input not valid, please type /NICK [Name] or just /NICK for random nickname");
+                        }
+                    }
                     break;
                 case "/JOIN":
-                    input=input.substring(input.indexOf(' ')+1,input.length());
-                    client.joinChannel(input);
+                    try {
+                        input = input.substring(input.indexOf(' ') + 1, input.length());
+                        client.joinChannel(input);
+                    }catch (Exception e){
+                        System.out.println("Input not valid, please type /JOIN [Channel_Name]");
+                    }
                     break;
                 case "/LEAVE":
-                    input=input.substring(input.indexOf(' ')+1,input.length());
-                    client.leaveChannel(input);
+                    try{
+                        input=input.substring(input.indexOf(' ')+1,input.length());
+                        client.leaveChannel(input);
+                    }catch (Exception e){
+                        System.out.println("Input not valid, please type /LEAVE [Channel_Name]");
+                    }
                     break;
                 default:
                     if(command.length()>0) {
-                        if(command.charAt(0)=='@'){
-                            String chname=input.substring(1,input.indexOf(' '));
-                            String message=input.substring(input.indexOf(' ')+1,input.length());
-                            //System.out.println("chname:"+chname+"/message:"+message);
-                            client.sendMessage(chname,message);
-                        }else{
-                            String message=input.substring(0,input.length());
-                            client.sendMessage(message);
+                        try{
+                            if(command.charAt(0)=='@'){
+                                String chname=input.substring(1,input.indexOf(' '));
+                                String message=input.substring(input.indexOf(' ')+1,input.length());
+                                client.sendMessage(chname,message);
+                            }else{
+                                String message=input.substring(0,input.length());
+                                client.sendMessage(message);
+                            }
+                        }catch(Exception e){
+                            System.out.println("Input not valid, please type @[channel_name] [message] or [message without @ as first character]");
                         }
                     }
                     break;

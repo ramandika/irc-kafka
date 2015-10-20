@@ -21,7 +21,6 @@ public class ThreadConsumer implements Runnable {
     public void run() {
         Map<String,Integer> topicCountMap=new HashMap<String, Integer>();
         topicCountMap.put(chname,1);
-        System.out.println(topicCountMap);
         Map<String,List<KafkaStream<byte[],byte[]>>> temp=connector.createMessageStreams(topicCountMap);
         ConsumerIterator<byte[], byte[]> it = temp.get(chname).get(0).iterator();
         while (it.hasNext()) {
