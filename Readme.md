@@ -57,3 +57,8 @@ When the user types `/EXIT`, all the connectors will be shutdown and connectors 
 
 
 ### Running Program
+1. Install maven
+2. Import bin ke **$PATH** dan pastikan **$JAVA_HOME** berisi alamat jdk yang akan digunakan
+2. jalankan perintah **mvn clean install**, jika terjadi error ubah target jdk pada **pom.xml** sesuai dengan versi jdk pada JAVA_HOME
+3. jalankan perintah **mvn exec:java -Dexec.mainClass="Client"**
+4. Ketikkan perintah yang tersedia

@@ -54,3 +54,6 @@ When the user types `/EXIT`, all the connectors will be shutdown and connectors 
 4. `/EXIT`: terminate the application
 5. `@<channelname> <any_text>` send **any_text** to **channelname**
 6. `<any_text>` send **any_text** to all channels joined by the user.
+
+
+### Running Program
